@@ -11,7 +11,7 @@ import tagRoutes from './routes/tagRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import seoRoutes from './routes/seoRoutes.js';
 import { upload } from './middleware/upload.js';
-import User from './models/User.js';
+import { seed } from './seed.js';
 
 dotenv.config();
 
@@ -74,15 +74,12 @@ const PORT = process.env.PORT;
 const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_ADMIN;
 const adminPassword = process.env.ADMIN_PASSWORD || process.env.EMAIL_PASSWORD;
 
-connectDB().then(async () => {
-  const existingAdmin = await User.findOne({ email: adminEmail });
-  if (!existingAdmin) {
-    await User.create({
-      name: 'Admin',
-      email: adminEmail,
-      password: adminPassword,
-      role: 'admin',
-    });
-  }
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-});
+connectDB()
+  .then(async () => {
+    await seed({ skipConnection: true });
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch((err) => {
+    console.error('DB connection failed:', err);
+    process.exit(1);
+  });

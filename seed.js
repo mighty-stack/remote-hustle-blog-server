@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import User from './models/User.js';
 import Category from './models/Category.js';
@@ -11,10 +10,11 @@ dotenv.config();
 const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_ADMIN || 'admin@remotehustle.com';
 const adminPassword = process.env.ADMIN_PASSWORD || process.env.EMAIL_PASSWORD || 'adminpassword123';
 
-const seed = async () => {
-  await connectDB();
+export const seed = async ({ skipConnection = false } = {}) => {
+  if (!skipConnection) {
+    await connectDB();
+  }
 
-  // Create admin user
   const existingAdmin = await User.findOne({ email: adminEmail });
   let admin;
   if (!existingAdmin) {
@@ -31,14 +31,14 @@ const seed = async () => {
     console.log('Admin user already exists');
   }
 
-  // Create categories
   const categories = {};
   const catData = [
-    { name: 'Company News', description: 'Announcements and updates from I-REV.' },
+    { name: 'Company News', description: 'Announcements and updates from Remote Hustle.' },
     { name: 'Technology', description: 'Technical articles and tutorials.' },
     { name: 'Education', description: 'Educational content and guides.' },
     { name: 'Industry Insights', description: 'Analysis and trends in our industry.' },
   ];
+
   for (const c of catData) {
     let cat = await Category.findOne({ name: c.name });
     if (!cat) {
@@ -48,28 +48,27 @@ const seed = async () => {
     categories[c.name] = cat;
   }
 
-  // Create tags
   const tags = {};
   const tagNames = ['announcement', 'tutorial', 'guide', 'news', 'tips'];
   for (const name of tagNames) {
     let tag = await Tag.findOne({ name });
     if (!tag) {
       tag = await Tag.create({ name });
+      console.log(`Tag created: ${name}`);
     }
     tags[name] = tag;
   }
 
-  // Create sample posts
   const samplePosts = [
     {
-      title: 'Welcome to the I-REV Blog',
+      title: 'Welcome to Remote Hustle',
       excerpt: 'Learn about our new blog platform and what we have planned for the future.',
-      content: `<h2>Our Mission</h2><p>Welcome to the official I-REV blog! We're excited to share insights, news, and educational content with our community.</p><p>This blog will cover a wide range of topics, from company announcements to deep technical guides. Our team is passionate about sharing knowledge and we hope you'll find value in what we publish.</p><h2>What to Expect</h2><p>Here's what you can look forward to:</p><ul><li>Company news and announcements</li><li>Technical tutorials and guides</li><li>Industry analysis and insights</li><li>Educational content for all levels</li></ul><p>Stay tuned for more content coming soon!</p>`,
+      content: `<h2>Our Mission</h2><p>Welcome to Remote Hustle! We're excited to share insights, news, and educational content with our community.</p><p>This blog will cover a wide range of topics, from company announcements to deep technical guides. Our team is passionate about sharing knowledge and we hope you'll find value in what we publish.</p><h2>What to Expect</h2><p>Here's what you can look forward to:</p><ul><li>Company news and announcements</li><li>Technical tutorials and guides</li><li>Industry analysis and insights</li><li>Educational content for all levels</li></ul><p>Stay tuned for more content coming soon!</p>`,
       category: categories['Company News'],
       tags: [tags['announcement'], tags['news']],
       status: 'published',
       featured: true,
-      seoTitle: 'Welcome to the I-REV Blog',
+      seoTitle: 'Welcome to Remote Hustle',
       metaDescription: 'Learn about our new blog platform and what we have planned for the future.',
     },
     {
@@ -105,10 +104,15 @@ const seed = async () => {
   }
 
   console.log('Seed complete!');
-  process.exit(0);
+  return { admin, categories, tags };
 };
 
-seed().catch((err) => {
-  console.error('Seed error:', err);
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].endsWith('seed.js')) {
+  seed()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Seed error:', err);
+      process.exit(1);
+    });
+}
+
