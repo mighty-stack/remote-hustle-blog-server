@@ -43,10 +43,22 @@ app.use('/api/seo', seoRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/posts', postRoutes);
+app.use('/posts', postRoutes);
+
 app.use('/api/categories', categoryRoutes);
+app.use('/categories', categoryRoutes);
+
 app.use('/api/tags', tagRoutes);
+app.use('/tags', tagRoutes);
+
 app.use('/api/contact', contactRoutes);
+app.use('/contact', contactRoutes);
+
+app.use('/api/seo', seoRoutes);
+app.use('/seo', seoRoutes);
 
 // Image upload
 app.post('/api/upload', upload.single('image'), (req, res) => {
@@ -57,9 +69,18 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   const baseUrl = `http://localhost:${process.env.PORT}`;
   res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
 });
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    return res.json({ error: 'No file uploaded' });
+  }
+  const baseUrl = `http://localhost:${process.env.PORT}`;
+  res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
+});
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // Error handler
 app.use((err, req, res, next) => {
