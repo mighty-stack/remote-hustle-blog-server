@@ -8,28 +8,29 @@ const router = Router();
 
 const signToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '12h' });
 
-router.post(
-  '/login',
-  asyncHandler(async (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400);
-      throw new Error('Email and password are required');
-    }
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password))) {
-      res.status(401);
-      throw new Error('Invalid email or password');
-    }
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: signToken(user._id),
-    });
-  })
-);
+const loginHandler = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    res.status(400);
+    throw new Error('Email and password are required');
+  }
+  const user = await User.findOne({ email });
+  if (!user || !(await user.matchPassword(password))) {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
+  res.json({
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    token: signToken(user._id),
+  });
+});
+
+router.post('/login', loginHandler);
+router.post('/signin', loginHandler);
+router.post('/admin/login', loginHandler);
 
 router.get(
   '/me',

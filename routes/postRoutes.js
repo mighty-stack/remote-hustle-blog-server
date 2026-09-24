@@ -20,34 +20,41 @@ const buildQuery = (q) => {
   return query;
 };
 
+const listPublishedPosts = asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(50, parseInt(req.query.limit) || 10);
+  const query = { status: 'published', ...buildQuery(req.query) };
+
+  if (req.path === '/featured' && !req.query.featured) {
+    query.featured = true;
+  }
+
+  delete query.status;
+
+  const [posts, total] = await Promise.all([
+    Post.find(query)
+      .populate('category', 'name slug')
+      .populate('tags', 'name slug')
+      .populate('author', 'name bio avatar')
+      .sort({ publishedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Post.countDocuments(query),
+  ]);
+
+  res.json({
+    posts,
+    page,
+    pages: Math.ceil(total / limit),
+    total,
+  });
+});
+
 // Public: published posts
-router.get(
-  '/',
-  asyncHandler(async (req, res) => {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, parseInt(req.query.limit) || 10);
-    const query = { status: 'published', ...buildQuery(req.query) };
-    delete query.status;
-
-    const [posts, total] = await Promise.all([
-      Post.find(query)
-        .populate('category', 'name slug')
-        .populate('tags', 'name slug')
-        .populate('author', 'name bio avatar')
-        .sort({ publishedAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit),
-      Post.countDocuments(query),
-    ]);
-
-    res.json({
-      posts,
-      page,
-      pages: Math.ceil(total / limit),
-      total,
-    });
-  })
-);
+router.get('/', listPublishedPosts);
+router.get('/home', listPublishedPosts);
+router.get('/latest', listPublishedPosts);
+router.get('/featured', listPublishedPosts);
 
 // Admin: all posts (any status)
 router.get(
