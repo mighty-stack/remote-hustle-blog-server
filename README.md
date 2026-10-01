@@ -16,6 +16,9 @@
    - `JWT_SECRET` — a long random string for JWT signing
    - `PORT` — defaults to 5000
    - `CLIENT_URL` — your frontend URL (for CORS)
+   - `SERVER_URL` — the public backend URL in production, such as `https://your-api.example.com`
+
+Uploaded images are stored in the server's `uploads` directory. Production deployments must use persistent storage for this directory or a cloud object-storage service; files in a local workspace are not automatically available to the deployed server.
 
 3. Seed the database with an admin user and sample content:
    ```

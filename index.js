@@ -19,12 +19,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set('trust proxy', 1);
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://remotehustle-blog.vercel.app',
   'http://localhost:5173',
 ].filter(Boolean);
+
+const getPublicBaseUrl = (req) =>
+  (process.env.SERVER_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
 app.use(
   cors({
@@ -66,7 +70,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     res.status(400);
     return res.json({ error: 'No file uploaded' });
   }
-  const baseUrl = `http://localhost:${process.env.PORT}`;
+  const baseUrl = getPublicBaseUrl(req);
   res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
 });
 app.post('/upload', upload.single('image'), (req, res) => {
@@ -74,7 +78,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
     res.status(400);
     return res.json({ error: 'No file uploaded' });
   }
-  const baseUrl = `http://localhost:${process.env.PORT}`;
+  const baseUrl = getPublicBaseUrl(req);
   res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
 });
 
