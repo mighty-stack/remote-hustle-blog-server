@@ -264,10 +264,10 @@ router.put(
     post.content = content ?? post.content;
     post.featuredImage = featuredImage ?? post.featuredImage;
     post.imageAlt = imageAlt ?? post.imageAlt;
-    post.category = category ?? post.category;
+    if (category !== undefined) post.category = category || null;
     post.tags = tagIds.length ? tagIds : post.tags;
     post.status = status ?? post.status;
-    post.scheduledAt = scheduledAt ?? post.scheduledAt;
+    if (scheduledAt !== undefined) post.scheduledAt = scheduledAt || null;
     post.featured = featured ?? post.featured;
     post.seoTitle = seoTitle ?? post.seoTitle;
     post.metaDescription = metaDescription ?? post.metaDescription;
