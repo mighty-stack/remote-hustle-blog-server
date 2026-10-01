@@ -16,9 +16,9 @@
    - `JWT_SECRET` — a long random string for JWT signing
    - `PORT` — defaults to 5000
    - `CLIENT_URL` — your frontend URL (for CORS)
-   - `SERVER_URL` — the public backend URL in production, such as `https://your-api.example.com`
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` — image storage credentials from your Cloudinary dashboard
 
-Uploaded images are stored in the server's `uploads` directory. Production deployments must use persistent storage for this directory or a cloud object-storage service; files in a local workspace are not automatically available to the deployed server.
+New uploads are stored in Cloudinary, so a Render persistent disk is not required. Set the Cloudinary variables both in your local `.env` and in the Render service's Environment settings. Existing files in the local `uploads` directory are not transferred automatically; upload them again through the admin site or migrate them to Cloudinary.
 
 3. Seed the database with an admin user and sample content:
    ```

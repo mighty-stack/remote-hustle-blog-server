@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'node:url';
+import { v2 as cloudinary } from 'cloudinary';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -10,13 +9,15 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import tagRoutes from './routes/tagRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import seoRoutes from './routes/seoRoutes.js';
-import { upload } from './middleware/upload.js';
+import { upload, uploadDir } from './middleware/upload.js';
 import { seed } from './seed.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 const app = express();
 app.set('trust proxy', 1);
@@ -26,9 +27,6 @@ const allowedOrigins = [
   'https://remotehustle-blog.vercel.app',
   'http://localhost:5173',
 ].filter(Boolean);
-
-const getPublicBaseUrl = (req) =>
-  (process.env.SERVER_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
 app.use(
   cors({
@@ -40,7 +38,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadDir));
 
 // SEO routes (sitemap, robots)
 app.use('/api/seo', seoRoutes);
@@ -65,22 +63,26 @@ app.use('/api/seo', seoRoutes);
 app.use('/seo', seoRoutes);
 
 // Image upload
-app.post('/api/upload', upload.single('image'), (req, res) => {
+const uploadImage = (req, res, next) => {
   if (!req.file) {
     res.status(400);
     return res.json({ error: 'No file uploaded' });
   }
-  const baseUrl = getPublicBaseUrl(req);
-  res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
-});
-app.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    res.status(400);
-    return res.json({ error: 'No file uploaded' });
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    return res.status(503).json({ error: 'Image uploads are not configured' });
   }
-  const baseUrl = getPublicBaseUrl(req);
-  res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
-});
+
+  cloudinary.uploader
+    .upload_stream({ folder: 'remote-hustle' }, (error, result) => {
+      if (error) return next(error);
+      if (!result?.secure_url) return next(new Error('Image upload failed'));
+      res.json({ url: result.secure_url });
+    })
+    .end(req.file.buffer);
+};
+
+app.post('/api/upload', upload.single('image'), uploadImage);
+app.post('/upload', upload.single('image'), uploadImage);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
